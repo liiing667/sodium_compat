@@ -1499,6 +1499,9 @@ abstract class ParagonIE_Sodium_Crypto
         $st = ParagonIE_Sodium_Core_SecretStream_State::fromString($state);
 
         $cipherlen = ParagonIE_Sodium_Core_Util::strlen($cipher);
+        if ($cipherlen < ParagonIE_Sodium_Compat::CRYPTO_SECRETSTREAM_XCHACHA20POLY1305_ABYTES) {
+            return false;
+        }
         #     mlen = inlen - crypto_secretstream_xchacha20poly1305_ABYTES;
         $msglen = $cipherlen - ParagonIE_Sodium_Compat::CRYPTO_SECRETSTREAM_XCHACHA20POLY1305_ABYTES;
         $aadlen = ParagonIE_Sodium_Core_Util::strlen($aad);

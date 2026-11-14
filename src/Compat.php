@@ -409,7 +409,7 @@ class ParagonIE_Sodium_Compat
      * @param string $nonce      Number to be used only Once; must be 32 bytes
      * @param string $key        Encryption key
      *
-     * @return string|bool       The original plaintext message
+     * @return string            The original plaintext message
      * @throws SodiumException
      * @throws TypeError
      */
@@ -419,7 +419,7 @@ class ParagonIE_Sodium_Compat
         string $nonce = '',
         #[SensitiveParameter]
         string $key = ''
-    ): string|bool {
+    ): string {
         /* Input validation: */
         if (ParagonIE_Sodium_Core_Util::strlen($nonce) !== self::CRYPTO_AEAD_AEGIS256_NPUBBYTES) {
             throw new SodiumException('Nonce must be CRYPTO_AEAD_AEGIS256_NPUBBYTES long');
@@ -530,7 +530,7 @@ class ParagonIE_Sodium_Compat
      * @param string $nonce      Number to be used only Once; must be 8 bytes
      * @param string $key        Encryption key
      *
-     * @return string|bool       The original plaintext message
+     * @return string            The original plaintext message
      * @throws SodiumException
      * @throws TypeError
      */
@@ -540,7 +540,7 @@ class ParagonIE_Sodium_Compat
         string $nonce = '',
         #[SensitiveParameter]
         string $key = ''
-    ): string|bool {
+    ): string {
         if (!self::crypto_aead_aes256gcm_is_available()) {
             throw new SodiumException('AES-256-GCM is not available');
         }
@@ -563,7 +563,7 @@ class ParagonIE_Sodium_Compat
 
         $ctext = ParagonIE_Sodium_Core_Util::substr($ciphertext, 0, -self::CRYPTO_AEAD_AES256GCM_ABYTES);
         $authTag = ParagonIE_Sodium_Core_Util::substr($ciphertext, -self::CRYPTO_AEAD_AES256GCM_ABYTES, 16);
-        return openssl_decrypt(
+        $plaintext = openssl_decrypt(
             $ctext,
             'aes-256-gcm',
             $key,
@@ -572,6 +572,10 @@ class ParagonIE_Sodium_Compat
             $authTag,
             $assocData
         );
+        if (!is_string($plaintext)) {
+            throw new SodiumException('Invalid MAC');
+        }
+        return $plaintext;
     }
 
     /**
@@ -660,7 +664,7 @@ class ParagonIE_Sodium_Compat
      * @param string $nonce      Number to be used only Once; must be 8 bytes
      * @param string $key        Encryption key
      *
-     * @return string|bool       The original plaintext message
+     * @return string            The original plaintext message
      * @throws SodiumException
      * @throws TypeError
      */
@@ -670,7 +674,7 @@ class ParagonIE_Sodium_Compat
         string $nonce = '',
         #[SensitiveParameter]
         string $key = ''
-    ): string|bool {
+    ): string {
         /* Input validation: */
         if (ParagonIE_Sodium_Core_Util::strlen($nonce) !== self::CRYPTO_AEAD_CHACHA20POLY1305_NPUBBYTES) {
             throw new SodiumException('Nonce must be CRYPTO_AEAD_CHACHA20POLY1305_NPUBBYTES long');
@@ -683,21 +687,29 @@ class ParagonIE_Sodium_Compat
         }
 
         if (self::useNewSodiumAPI()) {
-            return sodium_crypto_aead_chacha20poly1305_decrypt(
+            $plaintext = sodium_crypto_aead_chacha20poly1305_decrypt(
                 $ciphertext,
                 $assocData,
                 $nonce,
                 $key
             );
+            if (!is_string($plaintext)) {
+                throw new SodiumException('Invalid MAC');
+            }
+            return $plaintext;
         }
         if (self::use_fallback('crypto_aead_chacha20poly1305_decrypt')) {
-            return call_user_func(
+            $plaintext = call_user_func(
                 '\\Sodium\\crypto_aead_chacha20poly1305_decrypt',
                 $ciphertext,
                 $assocData,
                 $nonce,
                 $key
             );
+            if (!is_string($plaintext)) {
+                throw new SodiumException('Invalid MAC');
+            }
+            return $plaintext;
         }
         return ParagonIE_Sodium_Crypto::aead_chacha20poly1305_decrypt(
             $ciphertext,
@@ -781,7 +793,7 @@ class ParagonIE_Sodium_Compat
      * @param string $nonce      Number to be used only Once; must be 12 bytes
      * @param string $key        Encryption key
      *
-     * @return string|bool      The original plaintext message
+     * @return string            The original plaintext message
      * @throws SodiumException
      * @throws TypeError
      */
@@ -791,7 +803,7 @@ class ParagonIE_Sodium_Compat
         string $nonce = '',
         #[SensitiveParameter]
         string $key = ''
-    ): string|bool {
+    ): string {
         /* Input validation: */
         if (ParagonIE_Sodium_Core_Util::strlen($nonce) !== self::CRYPTO_AEAD_CHACHA20POLY1305_IETF_NPUBBYTES) {
             throw new SodiumException('Nonce must be CRYPTO_AEAD_CHACHA20POLY1305_IETF_NPUBBYTES long');
@@ -804,21 +816,29 @@ class ParagonIE_Sodium_Compat
         }
 
         if (self::useNewSodiumAPI()) {
-            return sodium_crypto_aead_chacha20poly1305_ietf_decrypt(
+            $plaintext = sodium_crypto_aead_chacha20poly1305_ietf_decrypt(
                 $ciphertext,
                 $assocData,
                 $nonce,
                 $key
             );
+            if (!is_string($plaintext)) {
+                throw new SodiumException('Invalid MAC');
+            }
+            return $plaintext;
         }
         if (self::use_fallback('crypto_aead_chacha20poly1305_ietf_decrypt')) {
-            return call_user_func(
+            $plaintext = call_user_func(
                 '\\Sodium\\crypto_aead_chacha20poly1305_ietf_decrypt',
                 $ciphertext,
                 $assocData,
                 $nonce,
                 $key
             );
+            if (!is_string($plaintext)) {
+                throw new SodiumException('Invalid MAC');
+            }
+            return $plaintext;
         }
         return ParagonIE_Sodium_Crypto::aead_chacha20poly1305_ietf_decrypt(
             $ciphertext,
@@ -929,7 +949,7 @@ class ParagonIE_Sodium_Compat
      * @param string $key          Encryption key
      * @param bool   $dontFallback Don't fallback to ext/sodium
      *
-     * @return string|bool         The original plaintext message
+     * @return string                The original plaintext message
      * @throws SodiumException
      * @throws TypeError
      */
@@ -940,7 +960,7 @@ class ParagonIE_Sodium_Compat
         #[SensitiveParameter]
         string $key = '',
         bool $dontFallback = false
-    ): string|bool {
+    ): string {
         /* Input validation: */
         if (ParagonIE_Sodium_Core_Util::strlen($nonce) !== self::CRYPTO_AEAD_XCHACHA20POLY1305_IETF_NPUBBYTES) {
             throw new SodiumException('Nonce must be CRYPTO_AEAD_XCHACHA20POLY1305_IETF_NPUBBYTES long');
@@ -953,12 +973,16 @@ class ParagonIE_Sodium_Compat
         }
         if (self::useNewSodiumAPI() && !$dontFallback) {
             if (is_callable('sodium_crypto_aead_xchacha20poly1305_ietf_decrypt')) {
-                return sodium_crypto_aead_xchacha20poly1305_ietf_decrypt(
+                $plaintext = sodium_crypto_aead_xchacha20poly1305_ietf_decrypt(
                     $ciphertext,
                     $assocData,
                     $nonce,
                     $key
                 );
+                if (!is_string($plaintext)) {
+                    throw new SodiumException('Invalid MAC');
+                }
+                return $plaintext;
             }
         }
 
@@ -1201,24 +1225,32 @@ class ParagonIE_Sodium_Compat
      *
      * @param string $ciphertext Sealed message to be opened
      * @param string $keypair    Your crypto_box keypair
-     * @return string|bool       The original plaintext message
+     * @return string            The original plaintext message
      * @throws SodiumException
      * @throws TypeError
      */
     public static function crypto_box_seal_open(
         string $ciphertext,
         string $keypair
-    ): string|bool {
+    ): string {
         /* Input validation: */
         if (ParagonIE_Sodium_Core_Util::strlen($keypair) !== self::CRYPTO_BOX_KEYPAIRBYTES) {
             throw new SodiumException('Argument 2 must be CRYPTO_BOX_KEYPAIRBYTES long.');
         }
 
         if (self::useNewSodiumAPI()) {
-            return sodium_crypto_box_seal_open($ciphertext, $keypair);
+            $plaintext = sodium_crypto_box_seal_open($ciphertext, $keypair);
+            if (!is_string($plaintext)) {
+                throw new SodiumException('Invalid MAC');
+            }
+            return $plaintext;
         }
         if (self::use_fallback('crypto_box_seal_open')) {
-            return call_user_func('\\Sodium\\crypto_box_seal_open', $ciphertext, $keypair);
+            $plaintext = call_user_func('\\Sodium\\crypto_box_seal_open', $ciphertext, $keypair);
+            if (!is_string($plaintext)) {
+                throw new SodiumException('Invalid MAC');
+            }
+            return $plaintext;
         }
         return ParagonIE_Sodium_Crypto::box_seal_open($ciphertext, $keypair);
     }
@@ -1282,7 +1314,7 @@ class ParagonIE_Sodium_Compat
      * @param string $ciphertext Encrypted message
      * @param string $nonce      Number to only be used Once; must be 24 bytes
      * @param string $keypair    Your secret key and the sender's public key
-     * @return string|bool       The original plaintext message
+     * @return string            The original plaintext message
      * @throws SodiumException
      * @throws TypeError
      */
@@ -1291,7 +1323,7 @@ class ParagonIE_Sodium_Compat
         string $nonce,
         #[SensitiveParameter]
         string $keypair
-    ): string|bool {
+    ): string {
         /* Input validation: */
         if (ParagonIE_Sodium_Core_Util::strlen($ciphertext) < self::CRYPTO_BOX_MACBYTES) {
             throw new SodiumException('Argument 1 must be at least CRYPTO_BOX_MACBYTES long.');
@@ -1304,10 +1336,18 @@ class ParagonIE_Sodium_Compat
         }
 
         if (self::useNewSodiumAPI()) {
-            return sodium_crypto_box_open($ciphertext, $nonce, $keypair);
+            $plaintext = sodium_crypto_box_open($ciphertext, $nonce, $keypair);
+            if (!is_string($plaintext)) {
+                throw new SodiumException('Invalid MAC');
+            }
+            return $plaintext;
         }
         if (self::use_fallback('crypto_box_open')) {
-            return call_user_func('\\Sodium\\crypto_box_open', $ciphertext, $nonce, $keypair);
+            $plaintext = call_user_func('\\Sodium\\crypto_box_open', $ciphertext, $nonce, $keypair);
+            if (!is_string($plaintext)) {
+                throw new SodiumException('Invalid MAC');
+            }
+            return $plaintext;
         }
         return ParagonIE_Sodium_Crypto::box_open($ciphertext, $nonce, $keypair);
     }
@@ -2236,7 +2276,7 @@ class ParagonIE_Sodium_Compat
      * @param string $ciphertext Ciphertext with Poly1305 MAC
      * @param string $nonce      A Number to be used Once; must be 24 bytes
      * @param string $key        Symmetric encryption key
-     * @return string|bool       Original plaintext message
+     * @return string            Original plaintext message
      * @throws SodiumException
      * @throws TypeError
      */
@@ -2245,7 +2285,7 @@ class ParagonIE_Sodium_Compat
         string $nonce,
         #[SensitiveParameter]
         string $key
-    ): string|bool {
+    ): string {
         /* Input validation: */
         if (ParagonIE_Sodium_Core_Util::strlen($nonce) !== self::CRYPTO_SECRETBOX_NONCEBYTES) {
             throw new SodiumException('Argument 2 must be CRYPTO_SECRETBOX_NONCEBYTES long.');
@@ -2258,10 +2298,18 @@ class ParagonIE_Sodium_Compat
         }
 
         if (self::useNewSodiumAPI()) {
-            return sodium_crypto_secretbox_open($ciphertext, $nonce, $key);
+            $plaintext = sodium_crypto_secretbox_open($ciphertext, $nonce, $key);
+            if (!is_string($plaintext)) {
+                throw new SodiumException('Invalid MAC');
+            }
+            return $plaintext;
         }
         if (self::use_fallback('crypto_secretbox_open')) {
-            return call_user_func('\\Sodium\\crypto_secretbox_open', $ciphertext, $nonce, $key);
+            $plaintext = call_user_func('\\Sodium\\crypto_secretbox_open', $ciphertext, $nonce, $key);
+            if (!is_string($plaintext)) {
+                throw new SodiumException('Invalid MAC');
+            }
+            return $plaintext;
         }
         return ParagonIE_Sodium_Crypto::secretbox_open($ciphertext, $nonce, $key);
     }

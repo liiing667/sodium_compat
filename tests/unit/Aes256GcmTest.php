@@ -151,14 +151,17 @@ class Aes256GcmTest extends TestCase
                 $case['msg'],
                 $decrypted
             );
-            $this->assertFalse(
+            try {
                 ParagonIE_Sodium_Compat::crypto_aead_aes256gcm_decrypt(
                     $encrypted,
                     'x' . $case['aad'],
                     $case['nonce'],
                     $case['key']
-                )
-            );
+                );
+                $this->fail('Silent failure occurred instead of exception being thrown');
+            } catch (SodiumException $ex) {
+                $this->assertInstanceOf(SodiumException::class, $ex);
+            }
             try {
                 ParagonIE_Sodium_Compat::crypto_aead_aes256gcm_decrypt(
                     $encrypted,
@@ -202,8 +205,12 @@ class Aes256GcmTest extends TestCase
         }
 
         $ciphertext = ParagonIE_Sodium_Compat::crypto_aead_aes256gcm_encrypt($msg, $ad, $nonce, $key);
-        $decrypted = ParagonIE_Sodium_Compat::crypto_aead_aes256gcm_decrypt(substr($ciphertext, 1), $ad, $nonce, $key);
-        $this->assertFalse($decrypted, 'Tampered ciphertext should fail decryption');
+        try {
+            ParagonIE_Sodium_Compat::crypto_aead_aes256gcm_decrypt(substr($ciphertext, 1), $ad, $nonce, $key);
+            $this->fail('Tampered ciphertext should fail decryption');
+        } catch (SodiumException $ex) {
+            $this->assertInstanceOf(SodiumException::class, $ex);
+        }
 
         try {
             ParagonIE_Sodium_Compat::crypto_aead_aes256gcm_decrypt(

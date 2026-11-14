@@ -79,16 +79,28 @@ class SodiumCompatCryptoAeadAes256GcmTest extends KnownAnswerTestCase
         $c = $this->hextobin($ciphertext);
 
         // Mismatched AD
-        $decrypted = ParagonIE_Sodium_Compat::crypto_aead_aes256gcm_decrypt($c, $c, $n, $k);
-        $this->assertFalse($decrypted);
+        try {
+            ParagonIE_Sodium_Compat::crypto_aead_aes256gcm_decrypt($c, $c, $n, $k);
+            $this->fail('Silent failure occurred instead of exception being thrown');
+        } catch (SodiumException $ex) {
+            $this->assertInstanceOf(SodiumException::class, $ex);
+        }
 
         // Mismatched Key
-        $decrypted = ParagonIE_Sodium_Compat::crypto_aead_aes256gcm_decrypt($c, $a, $n, str_repeat("\x00", 32));
-        $this->assertFalse($decrypted);
+        try {
+            ParagonIE_Sodium_Compat::crypto_aead_aes256gcm_decrypt($c, $a, $n, str_repeat("\x00", 32));
+            $this->fail('Silent failure occurred instead of exception being thrown');
+        } catch (SodiumException $ex) {
+            $this->assertInstanceOf(SodiumException::class, $ex);
+        }
 
         // Mismatched Nonce
-        $decrypted = ParagonIE_Sodium_Compat::crypto_aead_aes256gcm_decrypt($c, $a, str_repeat("\x00", 12), $k);
-        $this->assertFalse($decrypted);
+        try {
+            ParagonIE_Sodium_Compat::crypto_aead_aes256gcm_decrypt($c, $a, str_repeat("\x00", 12), $k);
+            $this->fail('Silent failure occurred instead of exception being thrown');
+        } catch (SodiumException $ex) {
+            $this->assertInstanceOf(SodiumException::class, $ex);
+        }
     }
 
     public function testInvalidKeyLengths(): void
